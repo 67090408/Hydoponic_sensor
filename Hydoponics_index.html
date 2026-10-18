@@ -1,49 +1,38 @@
 <!DOCTYPE html>
 <!--
-  โรงเรือนไฮโดรโปนิกส์ ธีม Groot: แผนที่อากาศ 3x3 + VPD
+  โรงเรือนไฮโดรโปนิกส์: แผนที่อากาศ 3x3 + VPD
   เปิดแบบนี้: idea_15.html?team=team11
   ฟัง bento-aiot/<ทีม>/# และส่งคำสั่งเข้า bento-aiot/<ทีม>/cmd
   คำสั่งที่ส่งได้: {"cmd":"ack"}  {"cmd":"crop","name":"cos"}
                    {"cmd":"fan","on":true|false}  {"cmd":"mist","sec":5}
+  (fan / mist ต้องเพิ่ม elif ในบอร์ดด้วย ดูคำอธิบายท้ายคำตอบ)
   broker สาธารณะ ไม่มีรหัสผ่าน ใครก็อ่านและสั่งได้ ห้ามส่งของลับ
 -->
 <html lang="th">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>โรงเรือนไฮโดรโปนิกส์ ธีม Groot</title>
+<title>โรงเรือนไฮโดรโปนิกส์</title>
 <style>
   :root {
-    --bg: #1b120b; --card: #2a1b10; --card2: #35231459; --line: #55391f; --ink: #f3e9d2; --dim: #b89d7a;
-    --bark: #6b4528; --leaf: #8bd146; --water: #4fc3d4; --eye: #ffb92e;
-    --ok: #8bd146; --warn: #ffb92e; --bad: #ef5b4f;
+    --bg: #effaf3; --card: #ffffff; --line: #cfe8d9; --ink: #11312a; --dim: #5a7d72;
+    --leaf: #2f9e57; --water: #1f9fb0; --ok: #2f9e57; --warn: #c98a00; --bad: #d64545;
     --font: system-ui, -apple-system, "Segoe UI", "Noto Sans Thai", "Sarabun", sans-serif;
   }
   * { box-sizing: border-box; }
-  body { margin: 0; color: var(--ink); font-family: var(--font); line-height: 1.45;
-    background:
-      repeating-linear-gradient(92deg, rgba(0,0,0,.18) 0 2px, transparent 2px 19px),
-      linear-gradient(180deg, #2c1c10, var(--bg) 320px); background-color: var(--bg); }
+  body { margin: 0; background: linear-gradient(180deg, #dff5e8, var(--bg) 240px); color: var(--ink); font-family: var(--font); line-height: 1.45; }
   .wrap { max-width: 920px; margin: 0 auto; padding: 14px; }
   header { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
-  .brand { display: flex; align-items: center; gap: 12px; }
-  .brand svg { width: 76px; height: 76px; flex: none; overflow: visible; }
-  h1 { margin: 0; font-size: 23px; color: var(--leaf); }
+  h1 { margin: 0; font-size: 22px; color: var(--leaf); }
   .sub { margin: 2px 0 0; color: var(--dim); font-size: 14px; }
   .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
   .row > * { min-width: 0; }
   .chip { padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); font-size: 13px; color: var(--dim); background: var(--card); }
   .chip.on { color: var(--ok); border-color: var(--ok); }
-  input, button, select { font: inherit; border-radius: 12px; border: 1px solid var(--line); background: #1f140c; color: var(--ink); padding: 8px 12px; min-height: 40px; }
+  input, button, select { font: inherit; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--ink); padding: 8px 12px; min-height: 40px; }
   button { cursor: pointer; font-weight: 600; }
-  button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--eye); outline-offset: 2px; }
-  button.main { background: var(--leaf); color: #17240a; border-color: var(--leaf); }
-  button.water { background: #1b6f7c; color: #fff; border-color: var(--water); }
-  button:disabled { opacity: .45; cursor: not-allowed; }
-  button.active { background: var(--ok); color: #17240a; border-color: var(--ok); box-shadow: 0 0 0 3px rgba(139,209,70,.3); }
-  button.active:disabled { opacity: 1; cursor: default; }
-  #fanOff.active { background: var(--dim); color: #1b120b; border-color: var(--dim); box-shadow: 0 0 0 3px rgba(184,157,122,.3); }
-  #mist.active { background: var(--water); color: #08323a; border-color: var(--water); box-shadow: 0 0 0 3px rgba(79,195,212,.35); }
+  button.main { background: var(--leaf); color: #fff; border-color: var(--leaf); }
+  button.water { background: var(--water); color: #fff; border-color: var(--water); }
   .alarm { display: none; margin: 12px 0; padding: 12px 14px; border-radius: 14px; background: var(--bad); color: #fff; }
   .alarm.show { display: block; }
   .grid2 { display: grid; grid-template-columns: 1.1fr 1fr; gap: 12px; margin-top: 12px; }
@@ -55,7 +44,7 @@
   svg { width: 100%; height: auto; display: block; }
   .big { font-size: 34px; font-weight: 800; }
   .vpdbar { position: relative; height: 18px; border-radius: 9px; margin: 10px 0 4px;
-    background: linear-gradient(90deg, #7fc3e3 0 13.3%, #8bd146 13.3% 53.3%, #e58a7e 53.3% 100%); }
+    background: linear-gradient(90deg, #9fd3f0 0 13.3%, #b9ecc8 13.3% 53.3%, #f6c7c0 53.3% 100%); }
   .vpdbar i { position: absolute; top: -5px; width: 4px; height: 28px; background: var(--ink); border-radius: 2px; left: 0; }
   .scale { display: flex; justify-content: space-between; font-size: 12px; color: var(--dim); }
   ul.log { list-style: none; margin: 0; padding: 0; max-height: 220px; overflow: auto; font-size: 14px; }
@@ -64,34 +53,14 @@
   .muted { color: var(--dim); font-size: 13px; }
   .grp { padding-top: 10px; margin-top: 10px; border-top: 1px dashed var(--line); }
   footer { margin: 18px 0 8px; color: var(--dim); font-size: 13px; }
-
-  /* ---------- Groot ---------- */
-  .eye { fill: var(--eye); }
-  .leaf { transform-box: fill-box; transform-origin: 50% 100%; animation: sway 4s ease-in-out infinite; }
-  .leaf.b { animation-delay: -1.6s; }
-  @keyframes sway { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
-
-  @media (prefers-reduced-motion: reduce) {
-    .leaf { animation: none !important; }
-  }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div class="brand">
-      <svg viewBox="0 0 80 80" aria-hidden="true">
-        <g class="leaf"><path d="M40 20 C30 6 20 8 14 2 C14 16 24 24 40 20Z" fill="#8bd146"/></g>
-        <g class="leaf b"><path d="M42 20 C52 4 62 8 70 4 C68 18 56 26 42 20Z" fill="#5fa82a"/></g>
-        <path d="M18 34 C18 22 62 22 62 34 L64 62 C64 72 16 72 16 62Z" fill="#6b4528"/>
-        <path d="M24 30 L26 66 M36 26 L35 70 M50 26 L52 70 M58 32 L57 64" stroke="#4a2e18" stroke-width="2" fill="none"/>
-        <ellipse class="eye" cx="30" cy="44" rx="5" ry="6"/><ellipse class="eye" cx="50" cy="44" rx="5" ry="6"/>
-        <path d="M31 58 Q40 63 49 58" stroke="#2a1708" stroke-width="3" fill="none" stroke-linecap="round"/>
-      </svg>
-      <div>
-        <h1>โรงเรือนไฮโดรโปนิกส์</h1>
-        <p class="sub">แผนผังอากาศของผัก: วันนี้ผักสุขภาพเป็นไง</p>
-      </div>
+    <div>
+      <h1>โรงเรือนไฮโดรโปนิกส์</h1>
+      <p class="sub">แผนผังอากาศของผัก: วันนี้ผักสุขภาพเป็นไง</p>
     </div>
     <div class="row">
       <label class="muted">ทีม <input id="team" size="10" autocomplete="off"></label>
@@ -107,11 +76,11 @@
       <h2>แผนที่อากาศ <span class="muted">(จุดล่าสุดใหญ่สุด)</span></h2>
       <svg id="map" viewBox="0 0 300 300" aria-label="แผนที่อุณหภูมิกับความชื้น">
         <g id="cells"></g>
-        <g fill="#b89d7a" font-size="11">
+        <g fill="#5a7d72" font-size="11">
           <text x="4" y="58">ร้อน</text><text x="4" y="148">พอดี</text><text x="4" y="238">หนาว</text>
           <text x="58" y="296">แห้ง</text><text x="148" y="296">พอดี</text><text x="238" y="296">ชื้น</text>
         </g>
-        <polyline id="trail" fill="none" stroke="#f3e9d2" stroke-width="1.5" stroke-dasharray="3 3"/>
+        <polyline id="trail" fill="none" stroke="#11312a" stroke-width="1.5" stroke-dasharray="3 3"/>
         <g id="dots"></g>
       </svg>
     </div>
@@ -182,7 +151,7 @@ const KNOWN = ["id", "crop", "level", "alert", "temp_c", "rh", "sun_c", "vpd", "
 const MOOD = ["ผักสบายดี", "ผักเริ่มเครียด", "ผักเครียดแล้ว"];
 const TODO = {
   hot: "เปิดพัดลมหรือพ่นหมอกลดร้อน", wet: "เปิดพัดลมระบายความชื้น", dry: "พ่นหมอกเพิ่มความชื้น",
-  cold: "ปิดพัดลม", vpd_low: "เปิดพัดลมลดความอับชื้น", vpd_high: "พ่นหมอกลดแรงดึงน้ำจากใบ"
+  cold: "ปิดม่านกันลม", vpd_low: "เปิดพัดลมลดความอับชื้น", vpd_high: "พ่นหมอกลดแรงดึงน้ำจากใบ"
 };
 const SVGNS = "http://www.w3.org/2000/svg";
 const $ = (id) => document.getElementById(id);
@@ -217,7 +186,7 @@ function drawCells() {
     const e = document.createElementNS(SVGNS, "rect");
     e.setAttribute("x", 32 + c * 90); e.setAttribute("y", 2 + r * 90);
     e.setAttribute("width", 86); e.setAttribute("height", 86); e.setAttribute("rx", 10);
-    e.setAttribute("fill", ok ? "#355a21" : "#33231a"); e.setAttribute("stroke", "#55391f");
+    e.setAttribute("fill", ok ? "#c9f0d6" : "#eef6f1"); e.setAttribute("stroke", "#cfe8d9");
     g.appendChild(e);
   }
 }
@@ -230,7 +199,7 @@ function drawTrail() {
     const c = document.createElementNS(SVGNS, "circle");
     c.setAttribute("cx", x.toFixed(1)); c.setAttribute("cy", y.toFixed(1));
     c.setAttribute("r", i === trail.length - 1 ? 9 : 4);
-    c.setAttribute("fill", ["#8bd146", "#ffb92e", "#ef5b4f"][p.level] || "#b89d7a");
+    c.setAttribute("fill", ["#2f9e57", "#c98a00", "#d64545"][p.level] || "#5a7d72");
     c.setAttribute("opacity", (0.35 + 0.65 * (i + 1) / trail.length).toFixed(2));
     g.appendChild(c);
   });
@@ -322,28 +291,9 @@ $("cropGo").onclick = () => {
   const k = $("cropSel").value;
   if (LIMITS[k]) send({ cmd: "crop", name: k }, "เปลี่ยนพืชเป็น " + CROP_TH[k]);
 };
-// สถานะพัดลมบนหน้าเว็บ: ปุ่มของสถานะปัจจุบันเปลี่ยนสีและกดซ้ำไม่ได้ อีกปุ่มกดสลับได้
-function setFanUi(on) {
-  $("fanOn").classList.toggle("active", on);   $("fanOn").disabled = on;
-  $("fanOff").classList.toggle("active", !on); $("fanOff").disabled = !on;
-  $("devState").textContent = "พัดลม: " + (on ? "เปิดอยู่" : "ปิดอยู่") + " (สั่งเมื่อ " + hhmm(new Date()) + ")";
-}
-$("fanOn").onclick = () => { if (send({ cmd: "fan", on: true }, "เปิดพัดลม")) setFanUi(true); };
-$("fanOff").onclick = () => { if (send({ cmd: "fan", on: false }, "ปิดพัดลม")) setFanUi(false); };
-
-// พ่นหมอก 5 วินาที: ปุ่มเปลี่ยนสี นับถอยหลัง และกดซ้ำไม่ได้จนกว่าจะครบเวลา
-let mistTimer = null;
-$("mist").onclick = () => {
-  if (mistTimer || !send({ cmd: "mist", sec: 5 }, "พ่นหมอก 5 วินาที")) return;
-  const b = $("mist"); let left = 5;
-  b.classList.add("active"); b.disabled = true; b.textContent = "กำลังพ่น " + left + " วิ";
-  mistTimer = setInterval(() => {
-    left--;
-    if (left > 0) { b.textContent = "กำลังพ่น " + left + " วิ"; return; }
-    clearInterval(mistTimer); mistTimer = null;
-    b.classList.remove("active"); b.disabled = false; b.textContent = "พ่นหมอก";
-  }, 1000);
-};
+$("fanOn").onclick = () => { if (send({ cmd: "fan", on: true }, "เปิดพัดลม")) $("devState").textContent = "พัดลม: สั่งเปิดแล้ว " + hhmm(new Date()); };
+$("fanOff").onclick = () => { if (send({ cmd: "fan", on: false }, "ปิดพัดลม")) $("devState").textContent = "พัดลม: สั่งปิดแล้ว " + hhmm(new Date()); };
+$("mist").onclick = () => { if (send({ cmd: "mist", sec: 5 }, "พ่นหมอก 5 วินาที")) $("devState").textContent = "พ่นหมอกล่าสุด " + hhmm(new Date()); };
 $("csv").onclick = downloadCsv;
 drawCells();
 if (team) connect(); else setStatus("ใส่เลขทีมแล้วกดเชื่อมต่อ", false);
